@@ -26,10 +26,10 @@ public class SyncSender
     {
         Properties properties = initProps();
         KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
-        IntStream.range(0, 10).forEach(i ->
+        IntStream.range(10, 20).forEach(i ->
         {
             ProducerRecord<String, String> record =
-                    new ProducerRecord<>("test",2, String.valueOf(i), "hello " + i);
+                    new ProducerRecord<>("test12",String.valueOf(i), "hello " + i);
             Future<RecordMetadata> future = producer.send(record);
             try
             {

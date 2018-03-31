@@ -15,34 +15,35 @@ import java.util.concurrent.atomic.AtomicInteger;
  * QQ: 532500648
  * QQ群:463962286
  ***************************************/
-public class SimpleConsumer
+public class CommitOffsetBothAsynSync
 {
-    private static final Logger LOG = LoggerFactory.getLogger(SimpleConsumer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CommitOffsetBothAsynSync.class);
 
 
     public static void main(String[] args)
     {
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(loadProp());
-        consumer.subscribe(Collections.singletonList("test_c"));
+        consumer.subscribe(Collections.singletonList("test12"));
 
-        final AtomicInteger counter = new AtomicInteger();
-        for (; ; )
+        try
         {
-            ConsumerRecords<String, String> records = consumer.poll(100);
-            records.forEach(record ->
+            for (; ; )
             {
-                //biz handler.
-                LOG.info("offset:{}", record.offset());
-                LOG.info("value:{}", record.value());
-                LOG.info("key:{}", record.key());
-                int cnt = counter.incrementAndGet();
+                ConsumerRecords<String, String> records = consumer.poll(100);
+                records.forEach(record ->
+                {
+                    //biz handler.
+                    LOG.info("offset:{}", record.offset());
+                    LOG.info("value:{}", record.value());
+                    LOG.info("key:{}", record.key());
+                });
 
-                if (cnt >= 3)
-                    Runtime.getRuntime().halt(-1);
-            });
+                consumer.commitAsync();
+            }
+        } finally
+        {
+            consumer.commitSync();
         }
-
-
     }
 
     private static Properties loadProp()
@@ -51,10 +52,10 @@ public class SimpleConsumer
         props.put("bootstrap.servers", "192.168.88.108:9092,192.168.88.109:9092,192.168.88.110:9092");
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put("group.id", "test_group4");
-        props.put("client.id", "demo-consumer-client");
+        props.put("group.id", "test_group8");
+        props.put("client.id", "demo-commit-consumer-client");
         props.put("auto.offset.reset", "earliest");
-        props.put("auto.commit.interval.ms", "10000");
+        props.put("enable.auto.commit", "false");
         return props;
     }
 }

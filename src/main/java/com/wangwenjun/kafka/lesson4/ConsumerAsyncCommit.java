@@ -11,21 +11,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /***************************************
  * @author:Alex Wang
- * @Date:2018/2/17
+ * @Date:2018/3/31
  * QQ: 532500648
  * QQ群:463962286
  ***************************************/
-public class SimpleConsumer
+public class ConsumerAsyncCommit
 {
-    private static final Logger LOG = LoggerFactory.getLogger(SimpleConsumer.class);
+
+    private static final Logger LOG = LoggerFactory.getLogger(ConsumerAsyncCommit.class);
 
 
     public static void main(String[] args)
     {
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(loadProp());
-        consumer.subscribe(Collections.singletonList("test_c"));
+        consumer.subscribe(Collections.singletonList("test12"));
 
-        final AtomicInteger counter = new AtomicInteger();
+        final AtomicInteger count = new AtomicInteger(0);
+
         for (; ; )
         {
             ConsumerRecords<String, String> records = consumer.poll(100);
@@ -35,14 +37,28 @@ public class SimpleConsumer
                 LOG.info("offset:{}", record.offset());
                 LOG.info("value:{}", record.value());
                 LOG.info("key:{}", record.key());
-                int cnt = counter.incrementAndGet();
+//                if (count.incrementAndGet() == 1000)
+//                {
+//                    consumer.commitSync();
+//                    count.set(0);
+//                }
+            });
 
-                if (cnt >= 3)
-                    Runtime.getRuntime().halt(-1);
+            /**
+             * can not be retry
+             * non-block
+             */
+            consumer.commitAsync((map, e) ->
+            {
+                if (e != null)
+                {
+                    e.printStackTrace();
+                } else
+                {
+                    System.out.println(map);
+                }
             });
         }
-
-
     }
 
     private static Properties loadProp()
@@ -51,10 +67,10 @@ public class SimpleConsumer
         props.put("bootstrap.servers", "192.168.88.108:9092,192.168.88.109:9092,192.168.88.110:9092");
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put("group.id", "test_group4");
-        props.put("client.id", "demo-consumer-client");
+        props.put("group.id", "test_group5");
+        props.put("client.id", "demo-commit-consumer-client");
         props.put("auto.offset.reset", "earliest");
-        props.put("auto.commit.interval.ms", "10000");
+        props.put("enable.auto.commit", "false");
         return props;
     }
 }
